@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Oobjs.Lesson1.Api/Oobjs.Lesson1.Api.csproj" />
+    <Project Path="src/Oobjs.Lesson1.Core/Oobjs.Lesson1.Core.csproj" />
+  </Folder>
+</Solution>
