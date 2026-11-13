@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Oobjs.Lesson1.Api.Models;
+using Oobjs.Lesson1.Core.Entities;
 using Oobjs.Lesson1.Core.Services;
 
 namespace Oobjs.Lesson1.Api.Controllers;
@@ -62,10 +63,14 @@ public class OobjsController : ControllerBase
     [HttpDelete("{guid:guid}")]
     public async Task<IActionResult> Delete(Guid guid)
     {
-        var success = await _service.DeleteAsync(guid);
+        var oobjExists= await _service.GetAsync(guid);
+        if(oobjExists is null)
+            return NotFound();
+
+        var success = await _service.DeleteOobjAsync(guid);
 
         if (!success)
-            return NotFound();
+            return Conflict();
 
         return NoContent();
     }
@@ -86,22 +91,76 @@ public class OobjsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{guid:guid}/fields")]
-    public async Task<IActionResult> AddField(
-        Guid guid,
-        CreateFieldValueRequest request)
+    [HttpDelete("{guid:guid}/fields")]
+    public async Task<IActionResult> RemoveField(Guid guid, string fieldName)
     {
         var oobj = await _service.GetAsync(guid);
-
         if (oobj is null)
             return NotFound();
 
-        var result = await _service.AddFieldAsync(
-            guid,
-            request.Field,
-            request.Value);
 
-        return Ok(result);
+        var success = await _service.RemoveFieldAsync(guid, fieldName);
+
+        if (!success)
+            return NotFound();
+
+        return NoContent();
     }
 
+     
+
+    [HttpPut("{guid:guid}/fields")]
+    public async Task<IActionResult> AddOrUpdateField(Guid guid
+        ,CreateFieldValueRequest request)
+    {
+        var oobj = await _service.GetAsync(guid);
+        if (oobj is null)  return NotFound();
+
+
+        //Uppdatera FieldValue
+        bool existingFieldValue = await _service.UpdateFieldAsync(guid,
+            request.Field, request.Value);
+
+        //skapa ny FieldValue
+        if (existingFieldValue == false)
+        {
+            var result = await _service.AddFieldAsync(guid,
+            request.Field, request.Value);
+            return Ok(result);
+
+        }
+        return NoContent();
+    }
+
+    //Lektion 2
+    [HttpGet("types")]
+    public async Task<IActionResult> GetTypes( string? type)
+    {
+
+        if(string.IsNullOrEmpty(type))
+        {
+            var result = await _service.GetAllUniqueOobjTypeNames();
+
+            if (result is null)
+                return NotFound();
+            return Ok(result);
+        }
+        else
+        {
+            var result = await _service.GetOobjTypeName(type);
+            return Ok(result);
+        }
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchDisplayName(string? query)
+    {
+        if (string.IsNullOrEmpty(query))
+        {
+            return Ok(new List<Oobj>());
+        }
+
+        var result = await _service.GetSearchQueryRelation(query);
+        return Ok(result);
+    }
 }

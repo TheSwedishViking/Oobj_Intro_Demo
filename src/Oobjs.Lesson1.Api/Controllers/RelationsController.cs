@@ -28,6 +28,8 @@ public class RelationsController : ControllerBase
         var result = await _service.CreateRelationAsync(
             request.ParentGuid,
             request.ChildGuid);
+        if (result is null)
+            return Conflict("Relation already exists or invalid.");
 
         return Ok(result);
     }
@@ -39,5 +41,17 @@ public class RelationsController : ControllerBase
             await _service.GetChildRelationsAsync(parentGuid);
 
         return Ok(result);
+    }
+
+    [HttpDelete("parent/{parentGuid:guid}/child/{childGuid:guid}")]
+    public async Task<IActionResult> Delete(Guid parentGuid, Guid childGuid)
+    {
+        var deleteRelation = await _service.
+        DeleteRelationsAsync(parentGuid, childGuid);
+        if (deleteRelation == false)
+            return Conflict();
+
+        return Ok();
+
     }
 }
